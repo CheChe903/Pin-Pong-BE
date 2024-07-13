@@ -15,7 +15,7 @@ public class Member {
     private Long id;
 
     @Column(name="githubId")
-    private String githubid;
+    private String githubId;
 
     @Column(name="githubImage")
     private String githubImage;
@@ -33,8 +33,8 @@ public class Member {
 
 
     @Builder
-    public Member(String githubid, String githubImage, Set<TechStack> techStacks, Integer pin) {
-        this.githubid = githubid;
+    public Member(String githubId, String githubImage, Set<TechStack> techStacks, Integer pin) {
+        this.githubId = githubId;
         this.githubImage = githubImage;
         this.techStacks = techStacks;
         this.pin = pin;
