@@ -3,6 +3,7 @@ package com.example.pin_pong.service;
 import com.example.pin_pong.domain.Member;
 import com.example.pin_pong.domain.TechStack;
 import com.example.pin_pong.repository.MemberRepository;
+import com.example.pin_pong.repository.TechStackRepository;
 import com.example.pin_pong.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +23,7 @@ import java.util.Set;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final TechStackRepository techStackRepository;
     private final JwtTokenProvider jwtTokenProvider;  // JwtTokenProvider 추가
 
     @Autowired
@@ -95,4 +97,20 @@ public class MemberService {
             throw new IllegalArgumentException("Invalid or missing Authorization header");
         }
     }
+
+    public Member updateTechStacks(Long memberId, Set<String> techStackNames) {
+        Member member = findById(memberId);
+        Set<TechStack> techStacks = new HashSet<>();
+
+        for (String techName : techStackNames) {
+            TechStack techStack = techStackRepository.findByTechName(techName)
+                    .orElseGet(() -> techStackRepository.save(new TechStack(techName)));
+            techStacks.add(techStack);
+        }
+
+        member.getTechStacks().clear();
+        member.getTechStacks().addAll(techStacks);
+        return memberRepository.save(member);
+    }
+
 }
