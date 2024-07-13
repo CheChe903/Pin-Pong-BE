@@ -113,4 +113,23 @@ public class MemberService {
         return memberRepository.save(member);
     }
 
+    public void decreasePin(Long memberId) {
+        Member member = findById(memberId);
+        if (member.getPin() <= 0) {
+            throw new IllegalArgumentException("Pin should be at least 1");
+        } else {
+            member.setPin(member.getPin() - 1);
+            memberRepository.save(member);
+            log.debug("Decreased pin for member with id: {}", memberId);
+        }
+    }
+
+    public void increasePin(Long memberId) {
+        Member member = findById(memberId);
+        Integer pin_inc = 3;
+        member.setPin(member.getPin() + pin_inc);
+        memberRepository.save(member);
+        log.debug("Increased pin for member with id: {}", memberId);
+    }
+
 }

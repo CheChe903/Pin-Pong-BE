@@ -1,0 +1,185 @@
+package com.example.pin_pong.controller;
+
+import com.example.pin_pong.domain.Comment;
+import com.example.pin_pong.domain.Member;
+import com.example.pin_pong.domain.Post;
+import com.example.pin_pong.domain.TechStack;
+import com.example.pin_pong.domain.dto.request.CommentWriteRequest;
+import com.example.pin_pong.domain.dto.request.PostWriteRequest;
+import com.example.pin_pong.domain.dto.response.*;
+import com.example.pin_pong.service.*;
+import com.example.pin_pong.support.ApiResponse;
+import com.example.pin_pong.support.ApiResponseGenerator;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Controller
+@RequestMapping("/api/v1/post")
+public class PostController {
+
+    private final PostService postService;
+    private final MemberService memberService;
+    private final TechStackService techStackService;
+    private final TokenService tokenService;
+    private final GithubService githubService;
+    private final CommentService commentService;
+
+    @Autowired
+    public PostController(PostService postService, MemberService memberService, TechStackService techStackService, TokenService tokenService, GithubService githubService, CommentService commentService) {
+        this.postService = postService;
+        this.memberService = memberService;
+        this.techStackService = techStackService;
+        this.tokenService = tokenService;
+        this.githubService = githubService;
+        this.commentService = commentService;
+    }
+
+    @PostMapping("/write")
+    public ApiResponse<ApiResponse.SuccessBody<Post>> writePost(@RequestBody PostWriteRequest postRequest, HttpServletRequest request) {
+        Long memberId = memberService.findMemberByToken(request);
+        Member author = memberService.findById(memberId);
+
+        // Check if author's pin is sufficient
+        if (author.getPin() > 0) {
+            memberService.decreasePin(memberId);
+        }
+
+        String accessToken = request.getHeader("access_token");
+
+        // Github Repository URL에서 PR ID 추출
+        Long prId = postRequest.extractPrIdFromGithubUrl();
+
+        // GithubService를 통해 PR의 모든 커밋 ID와 패치 내용을 가져옴
+        Map<String, String> commitList = githubService.getCommitsAndPatches(postRequest.getGithubRepoUrl(), accessToken);
+
+        Set<TechStack> techStacks = postRequest.getTechStacks().stream()
+                .map(techName -> techStackService.findByName(techName).orElseThrow(() -> new IllegalArgumentException("TechStack not found: " + techName)))
+                .collect(Collectors.toSet());
+
+        Post newPost = Post.builder()
+                .postTitle(postRequest.getPostTitle())
+                .prId(prId)
+                .commitList(commitList)
+                .content(postRequest.getContent())
+                .author(author)
+                .techStacks(techStacks)
+                .likedMembers(new HashSet<>()) // Initialize likedMembers to an empty set
+                .build();
+
+        Post savedPost = postService.save(newPost);
+
+        return ApiResponseGenerator.success(savedPost, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{postId}/like")
+    public ApiResponse<ApiResponse.SuccessBody<Post>> likePost(@PathVariable Long postId, HttpServletRequest request) {
+        Long memberId = memberService.findMemberByToken(request);
+        Member member = memberService.findById(memberId);
+
+        Post updatedPost = postService.addLike(postId, member);
+
+        return ApiResponseGenerator.success(updatedPost, HttpStatus.OK);
+    }
+
+    @GetMapping("/{postId}/like/get")
+    public ApiResponse<ApiResponse.SuccessBody<PostLikeCountInfo>> getLikeCount(@PathVariable Long postId) {
+
+        PostLikeCountInfo res = PostLikeCountInfo.builder()
+                .likeCount(postService.getLikeCount(postId))
+                .build();
+        return ApiResponseGenerator.success(res, HttpStatus.OK);
+
+    }
+
+    @PostMapping("/comment/add")
+    public ApiResponse<ApiResponse.SuccessBody<Comment>> addComment(@PathVariable Long postId, @RequestBody CommentWriteRequest commentWriteRequest, HttpServletRequest request) {
+        Long memberId = memberService.findMemberByToken(request);
+        Member member = memberService.findById(memberId);
+        Post post = postService.findById(postId);
+
+        Comment newComment = Comment.builder()
+                .selected(Boolean.FALSE)
+                .post(post)
+                .content(commentWriteRequest.getContent())
+                .build();
+
+        Comment savedComment = commentService.save(newComment);
+
+        return ApiResponseGenerator.success(savedComment, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{postId}/comment/get")
+    public ApiResponse<ApiResponse.SuccessBody<List<PostCommentInfo>>> getCommentsByPostId(@PathVariable Long postId) {
+        List<Comment> comments = commentService.getCommentsByPostId(postId);
+
+
+        List<PostCommentInfo> res = comments.stream()
+                .map(comment -> PostCommentInfo.builder()
+                        .commentId(comment.getId())
+                        .selected(comment.getSelected())
+                        .content(comment.getContent())
+                        .memberId(comment.getMember().getId()) // Optional: Include member information
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponseGenerator.success(res, HttpStatus.OK);
+    }
+
+    @PatchMapping("/{postid}/{commentid}/select")
+    public ApiResponse<?> selectComment(@PathVariable Long postid, @PathVariable Long commentid, HttpServletRequest request) {
+        Long memberId = memberService.findMemberByToken(request);
+        Member member = memberService.findById(memberId);
+
+        Comment selectedComment = commentService.selectComment(commentid, member);
+
+        if (selectedComment != null) {
+            return ApiResponseGenerator.success(selectedComment, HttpStatus.OK);
+        } else {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                    .message("Failed to select comment with id: " + commentid)
+                    .build();
+            return ApiResponseGenerator.success(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/list")
+    public ApiResponse<ApiResponse.SuccessBody<List<PostListInfo>>> getAllPosts() {
+        List<Post> posts = postService.findAllPosts();
+
+        List<PostListInfo> postInfos = posts.stream()
+                .map(post -> PostListInfo.builder()
+                        .postId(post.getId())
+                        .postTitle(post.getPostTitle())
+                        .memberId(post.getAuthor().getId()) // memberId만 반환
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponseGenerator.success(postInfos, HttpStatus.OK);
+    }
+
+    @GetMapping("/{githubId}/list")
+    public ApiResponse<ApiResponse.SuccessBody<List<PostListInfo>>> getPostsByGithubId(@PathVariable String githubId) {
+        List<Post> posts = postService.findByAuthorGithubId(githubId);
+
+        List<PostListInfo> postInfos = posts.stream()
+                .map(post -> PostListInfo.builder()
+                        .postId(post.getId())
+                        .postTitle(post.getPostTitle())
+                        .memberId(post.getAuthor().getId()) // memberId만 반환
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponseGenerator.success(postInfos, HttpStatus.OK);
+    }
+}
