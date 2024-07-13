@@ -10,5 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
+    Optional<Member> findById(Long id); // 추가된 findById 메서드
+
     Optional<Member> findByGithubId(String githubId);
 }

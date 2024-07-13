@@ -12,13 +12,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
+
+import java.util.Collections;
 import java.util.Map;
 
 @Slf4j
@@ -62,7 +65,8 @@ public class AuthController {
     }
 
     @GetMapping("/oauth/github/callback")
-    public ModelAndView handleGithubCallback(@RequestParam("code") String code, HttpSession session, RedirectAttributes redirectAttributes) {
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> handleGithubCallback(@RequestParam("code") String code, HttpSession session, RedirectAttributes redirectAttributes) {
         String accessToken = githubService.getAccessToken(code);
         Map<String, Object> userInfo = githubService.getUserInfo(accessToken);
 
@@ -70,21 +74,16 @@ public class AuthController {
 
         // GitHub 사용자의 avatar_url과 id 정보 추출
         String githubImage = (String) userInfo.get("avatar_url");
-        Long githubId = Long.parseLong((String) userInfo.get("id"));
+        String githubId = (String) userInfo.get("login");
 
         // GitHub 사용자의 프로필 JSON 생성
-        String githubProfile = String.format("{\"owner\": {\"avatar_url\": \"%s\", \"id\": \"%d\"}}", githubImage, githubId);
+        String githubProfile = String.format("{\"owner\": {\"avatar_url\": \"%s\", \"id\": \"%s\"}}", githubImage, githubId);
 
         Member member = memberService.saveOrUpdateUser(githubProfile);
         String jwtToken = tokenService.createToken(member.getId());
 
-        // 토큰을 RedirectAttributes에 추가하여 리다이렉션 시 전달
-        redirectAttributes.addAttribute("token", jwtToken);
-
-        // 리다이렉션할 URL 생성
-        String redirectUrl = redirectUri;  // 예시: 리다이렉션할 경로
-
-        return new ModelAndView(new RedirectView(redirectUrl));
+        // 응답에 토큰을 포함하여 반환
+        return ResponseEntity.ok().body(Collections.singletonMap("token", jwtToken));
     }
 
     @GetMapping("/generate-token") // Server token 생성

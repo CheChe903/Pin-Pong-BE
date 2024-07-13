@@ -42,7 +42,7 @@ public class JwtTokenProvider {
         }
     }
 
-    public Long getUserIdFromToken(String token) {
+    public Long getIdFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
         return Long.parseLong(claims.getSubject());
     }}

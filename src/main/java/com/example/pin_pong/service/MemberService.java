@@ -3,14 +3,17 @@ package com.example.pin_pong.service;
 import com.example.pin_pong.domain.Member;
 import com.example.pin_pong.domain.TechStack;
 import com.example.pin_pong.repository.MemberRepository;
+import com.example.pin_pong.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -19,6 +22,7 @@ import java.util.Set;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final JwtTokenProvider jwtTokenProvider;  // JwtTokenProvider 추가
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -74,6 +78,21 @@ public class MemberService {
         } catch (Exception e) {
             log.error("Failed to extract github image from profile", e);
             return null;
+        }
+    }
+
+    public Member findById(Long id) {
+        Optional<Member> optionalMember = memberRepository.findById(id);
+        return optionalMember.orElseThrow(() -> new IllegalArgumentException("해당 ID의 회원을 찾을 수 없습니다."));
+    }
+
+    public Long findMemberByToken(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            String token = authorization.substring(7);
+            return jwtTokenProvider.getIdFromToken(token);
+        } else {
+            throw new IllegalArgumentException("Invalid or missing Authorization header");
         }
     }
 }
