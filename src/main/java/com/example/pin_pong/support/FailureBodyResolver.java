@@ -1,6 +1,6 @@
 package com.example.pin_pong.support;
 
-import com.example.Mad4Cut.support.ApiResponse.FailureBody;
+import com.example.pin_pong.support.ApiResponse.FailureBody;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
 import lombok.experimental.UtilityClass;
