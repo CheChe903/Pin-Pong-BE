@@ -86,8 +86,9 @@ public class AuthController {
         return ResponseEntity.ok().body(Collections.singletonMap("token", jwtToken));
     }
 
-    @GetMapping("/generate-token") // Server token 생성
-    public String generateToken(@RequestParam Long id) {
-        return tokenService.createToken(id);
+    @GetMapping("/generate-token")
+    public ResponseEntity<Map<String, String>> generateToken(@RequestParam("id") Long id) {
+        String jwtToken = tokenService.createToken(id);
+        return ResponseEntity.ok(Collections.singletonMap("token", jwtToken));
     }
 }

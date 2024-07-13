@@ -64,7 +64,7 @@ public class MemberController {
         return ApiResponseGenerator.success(res, HttpStatus.OK);
     }
 
-    @GetMapping("/techstack")
+    @GetMapping("/techstacks")
     public ApiResponse<ApiResponse.SuccessBody<MemberTechStacksInfo>> getTechStacks(HttpServletRequest request){
         Long memberId = memberService.findMemberByToken(request);
         Member member = memberService.findById(memberId);
@@ -78,7 +78,7 @@ public class MemberController {
     @PatchMapping("/techstacks/update")
     public ApiResponse<ApiResponse.SuccessBody<MemberTechStacksInfo>> updateTechStacks(@RequestBody UpdateTechStacksRequest updateRequest, HttpServletRequest request) {
         Long memberId = memberService.findMemberByToken(request);
-        Member updatedMember = memberService.updateTechStacks(memberId, updateRequest.getTechStackNames());
+        Member updatedMember = memberService.updateTechStacks(memberId, updateRequest.getTechStacks());
 
         MemberTechStacksInfo res = MemberTechStacksInfo.builder()
                 .techStacks(updatedMember.getTechStacks())

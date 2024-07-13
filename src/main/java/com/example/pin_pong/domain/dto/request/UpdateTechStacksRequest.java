@@ -8,5 +8,5 @@ import java.util.Set;
 @Getter
 @Setter
 public class UpdateTechStacksRequest {
-    private Set<String> techStackNames;
+    private Set<String> techStacks;
 }
