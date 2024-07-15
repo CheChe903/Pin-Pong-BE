@@ -83,7 +83,7 @@ public class PostController {
     }
 
     @PostMapping("/{postId}/like")
-    public ApiResponse<ApiResponse.SuccessBody<Post>> likePost(@PathVariable Long postId, HttpServletRequest request) {
+    public ApiResponse<ApiResponse.SuccessBody<Post>> likePost(@PathVariable("postId") Long postId, HttpServletRequest request) {
         Long memberId = memberService.findMemberByToken(request);
         Member member = memberService.findById(memberId);
 
@@ -93,7 +93,7 @@ public class PostController {
     }
 
     @GetMapping("/{postId}/like/get")
-    public ApiResponse<ApiResponse.SuccessBody<PostLikeCountInfo>> getLikeCount(@PathVariable Long postId) {
+    public ApiResponse<ApiResponse.SuccessBody<PostLikeCountInfo>> getLikeCount(@PathVariable("postId") Long postId) {
 
         PostLikeCountInfo res = PostLikeCountInfo.builder()
                 .likeCount(postService.getLikeCount(postId))
@@ -102,8 +102,8 @@ public class PostController {
 
     }
 
-    @PostMapping("/comment/add")
-    public ApiResponse<ApiResponse.SuccessBody<Comment>> addComment(@PathVariable Long postId, @RequestBody CommentWriteRequest commentWriteRequest, HttpServletRequest request) {
+    @PostMapping("/{postId}/comment/add")
+    public ApiResponse<ApiResponse.SuccessBody<Comment>> addComment(@PathVariable("postId") Long postId, @RequestBody CommentWriteRequest commentWriteRequest, HttpServletRequest request) {
         Long memberId = memberService.findMemberByToken(request);
         Member member = memberService.findById(memberId);
         Post post = postService.findById(postId);
@@ -120,7 +120,7 @@ public class PostController {
     }
 
     @GetMapping("/{postId}/comment/get")
-    public ApiResponse<ApiResponse.SuccessBody<List<PostCommentInfo>>> getCommentsByPostId(@PathVariable Long postId) {
+    public ApiResponse<ApiResponse.SuccessBody<List<PostCommentInfo>>> getCommentsByPostId(@PathVariable("postId") Long postId) {
         List<Comment> comments = commentService.getCommentsByPostId(postId);
 
 
@@ -136,8 +136,8 @@ public class PostController {
         return ApiResponseGenerator.success(res, HttpStatus.OK);
     }
 
-    @PatchMapping("/{postid}/{commentid}/select")
-    public ApiResponse<?> selectComment(@PathVariable Long postid, @PathVariable Long commentid, HttpServletRequest request) {
+    @PatchMapping("/{postId}/{commentId}/select")
+    public ApiResponse<?> selectComment(@PathVariable("postId") Long postid, @PathVariable("commentId") Long commentid, HttpServletRequest request) {
         Long memberId = memberService.findMemberByToken(request);
         Member member = memberService.findById(memberId);
 
@@ -169,7 +169,7 @@ public class PostController {
     }
 
     @GetMapping("/{githubId}/list")
-    public ApiResponse<ApiResponse.SuccessBody<List<PostListInfo>>> getPostsByGithubId(@PathVariable String githubId) {
+    public ApiResponse<ApiResponse.SuccessBody<List<PostListInfo>>> getPostsByGithubId(@PathVariable("githubId") String githubId) {
         List<Post> posts = postService.findByAuthorGithubId(githubId);
 
         List<PostListInfo> postInfos = posts.stream()

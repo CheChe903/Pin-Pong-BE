@@ -88,6 +88,11 @@ public class MemberService {
         return optionalMember.orElseThrow(() -> new IllegalArgumentException("해당 ID의 회원을 찾을 수 없습니다."));
     }
 
+    public Member findByGithubId(String githubId) {
+        return memberRepository.findByGithubId(githubId)
+                .orElseThrow(() -> new IllegalArgumentException("Member not found with GitHub ID: " + githubId));
+    }
+
     public Long findMemberByToken(HttpServletRequest request) {
         String authorization = request.getHeader("Authorization");
         if (authorization != null && authorization.startsWith("Bearer ")) {

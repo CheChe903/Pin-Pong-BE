@@ -68,7 +68,7 @@ public class AuthController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> handleGithubCallback(@RequestParam("code") String code, HttpSession session, RedirectAttributes redirectAttributes) {
         String accessToken = githubService.getAccessToken(code);
-        Map<String, Object> userInfo = githubService.getUserInfo(accessToken);
+        Map<String, Object> userInfo = githubService. getUserInfo(accessToken);
 
         log.debug(userInfo.toString());
 
