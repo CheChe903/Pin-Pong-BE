@@ -66,7 +66,7 @@ public class MemberService {
     private String extractUserIdFromProfile(String githubProfile) {
         try {
             JsonNode jsonNode = objectMapper.readTree(githubProfile);
-            return String.valueOf(jsonNode.path("owner").path("id").asLong());
+            return String.valueOf(jsonNode.path("owner").path("id").asText());
         } catch (Exception e) {
             log.error("Failed to extract userId from profile", e);
             return null;
@@ -86,6 +86,11 @@ public class MemberService {
     public Member findById(Long id) {
         Optional<Member> optionalMember = memberRepository.findById(id);
         return optionalMember.orElseThrow(() -> new IllegalArgumentException("해당 ID의 회원을 찾을 수 없습니다."));
+    }
+
+    public Member findByGithubId(String githubId) {
+        return memberRepository.findByGithubId(githubId)
+                .orElseThrow(() -> new IllegalArgumentException("Member not found with GitHub ID: " + githubId));
     }
 
     public Long findMemberByToken(HttpServletRequest request) {
@@ -111,6 +116,25 @@ public class MemberService {
         member.getTechStacks().clear();
         member.getTechStacks().addAll(techStacks);
         return memberRepository.save(member);
+    }
+
+    public void decreasePin(Long memberId) {
+        Member member = findById(memberId);
+        if (member.getPin() <= 0) {
+            throw new IllegalArgumentException("Pin should be at least 1");
+        } else {
+            member.setPin(member.getPin() - 1);
+            memberRepository.save(member);
+            log.debug("Decreased pin for member with id: {}", memberId);
+        }
+    }
+
+    public void increasePin(Long memberId) {
+        Member member = findById(memberId);
+        int pin_inc = 3;
+        member.setPin(member.getPin() + pin_inc);
+        memberRepository.save(member);
+        log.debug("Increased pin for member with id: {}", memberId);
     }
 
 }

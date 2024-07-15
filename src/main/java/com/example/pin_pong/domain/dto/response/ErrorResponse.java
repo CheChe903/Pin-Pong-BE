@@ -9,6 +9,6 @@ import lombok.*;
 @NoArgsConstructor
 @Data
 @Builder
-public class MemberPinInfo {
-    private int pin;
+public class ErrorResponse {
+    private String message;
 }

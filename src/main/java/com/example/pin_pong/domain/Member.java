@@ -8,6 +8,7 @@ import java.util.Set;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 public class Member {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +22,7 @@ public class Member {
     private String githubImage;
 
     @Column(name="pin")
-    private Integer pin;
+    private int pin;
 
     @ManyToMany
     @JoinTable(

@@ -1,10 +1,7 @@
 package com.example.pin_pong.domain.dto.response;
 
 
-import com.example.pin_pong.domain.TechStack;
 import lombok.*;
-
-import java.util.Set;
 
 @Getter
 @ToString
@@ -12,6 +9,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Data
 @Builder
-public class MemberTechStacksInfo {
-    private Set<TechStack> techStacks;
+public class PostLikeCountInfo {
+    private int likeCount;
 }
+
