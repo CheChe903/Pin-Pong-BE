@@ -26,7 +26,7 @@ public class Post {
     @ElementCollection
     @CollectionTable(name = "post_commit_map", joinColumns = @JoinColumn(name = "post_id"))
     @MapKeyColumn(name = "commit_id")
-    @Column(name = "commit_content")
+    @Column(name = "commit_content", columnDefinition = "LONGTEXT")  // columnDefinition 추가
     private Map<String, String> commitList = new HashMap<>();
 
     @Column(name="content")

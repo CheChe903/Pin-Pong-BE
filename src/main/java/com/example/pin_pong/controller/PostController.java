@@ -55,13 +55,16 @@ public class PostController {
             memberService.decreasePin(memberId);
         }
 
-        String accessToken = request.getHeader("access_token");
+        String githubAccessToken = request.getHeader("githubAccessToken");
+        log.debug("githubAccessToken : {}", githubAccessToken);
 
         // Github Repository URL에서 PR ID 추출
         Long prId = postRequest.extractPrIdFromGithubUrl();
 
         // GithubService를 통해 PR의 모든 커밋 ID와 패치 내용을 가져옴
-        Map<String, String> commitList = githubService.getCommitsAndPatches(postRequest.getGithubRepoUrl(), accessToken);
+        Map<String, String> commitList = githubService.getCommitsAndPatches(postRequest.getGithubRepoUrl(), githubAccessToken);
+
+        log.debug("commitList : {}", commitList.toString());
 
         Set<TechStack> techStacks = postRequest.getTechStacks().stream()
                 .map(techName -> techStackService.findByName(techName).orElseThrow(() -> new IllegalArgumentException("TechStack not found: " + techName)))
