@@ -85,6 +85,41 @@ public class PostController {
         return ApiResponseGenerator.success(savedPost, HttpStatus.CREATED);
     }
 
+    @GetMapping("/{postId}")
+    public ApiResponse<ApiResponse.SuccessBody<PostInfo>> getPostById(@PathVariable("postId") Long postId) {
+        Post post = postService.findById(postId);
+        Member author = post.getAuthor();
+
+        // Post와 관련된 모든 댓글 가져오기
+        List<Comment> comments = commentService.getCommentsByPostId(postId);
+        List<PostCommentInfo> commentInfos = comments.stream()
+                .map(comment -> PostCommentInfo.builder()
+                        .commentId(comment.getId())
+                        .selected(comment.getSelected())
+                        .content(comment.getContent())
+                        .githubId(comment.getMember().getGithubId()) // 수정된 부분
+                        .build())
+                .toList();
+
+        Set<String> likedMemberIds = post.getLikedMembers().stream()
+                .map(Member::getGithubId)
+                .collect(Collectors.toSet());
+
+        PostInfo postInfo = PostInfo.builder()
+                .postTitle(post.getPostTitle())
+                .content(post.getContent())
+                .authorGithubId(author.getGithubId())
+                .authorGithubImage(author.getGithubImage())
+                .prId(post.getPrId())
+                .commitList(post.getCommitList())
+                .techStacks(post.getTechStacks())
+                .likedMembersGithubId(likedMemberIds) // 변경된 부분
+                .comments(commentInfos)
+                .build();
+
+        return ApiResponseGenerator.success(postInfo, HttpStatus.OK);
+    }
+
     @PostMapping("/{postId}/like")
     public ApiResponse<ApiResponse.SuccessBody<Post>> likePost(@PathVariable("postId") Long postId, HttpServletRequest request) {
         Long memberId = memberService.findMemberByToken(request);
@@ -114,6 +149,7 @@ public class PostController {
         Comment newComment = Comment.builder()
                 .selected(Boolean.FALSE)
                 .post(post)
+                .member(member)
                 .content(commentWriteRequest.getContent())
                 .build();
 
@@ -132,7 +168,7 @@ public class PostController {
                         .commentId(comment.getId())
                         .selected(comment.getSelected())
                         .content(comment.getContent())
-                        .memberId(comment.getMember().getId()) // Optional: Include member information
+                        .githubId(comment.getMember().getGithubId()) // 수정된 부분
                         .build())
                 .collect(Collectors.toList());
 
@@ -161,12 +197,22 @@ public class PostController {
         List<Post> posts = postService.findAllPosts();
 
         List<PostListInfo> postInfos = posts.stream()
-                .map(post -> PostListInfo.builder()
-                        .postId(post.getId())
-                        .postTitle(post.getPostTitle())
-                        .githubId(post.getAuthor().getGithubId()) // githubId 반환
-                        .githubImage(post.getAuthor().getGithubImage())
-                        .build())
+                .map(post -> {
+                    // 댓글 목록 가져오기
+                    List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+
+                    // postSelected 계산
+                    boolean postSelected = comments.stream().anyMatch(Comment::getSelected);
+
+                    return PostListInfo.builder()
+                            .postId(post.getId())
+                            .postTitle(post.getPostTitle())
+                            .githubId(post.getAuthor().getGithubId())
+                            .githubImage(post.getAuthor().getGithubImage())
+                            .likedMemberCount(post.getLikedMembers().size())
+                            .postSelected(postSelected)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return ApiResponseGenerator.success(postInfos, HttpStatus.OK);
@@ -177,16 +223,27 @@ public class PostController {
         List<Post> posts = postService.findByAuthorGithubId(githubId);
 
         List<PostListInfo> postInfos = posts.stream()
-                .map(post -> PostListInfo.builder()
-                        .postId(post.getId())
-                        .postTitle(post.getPostTitle())
-                        .githubId(post.getAuthor().getGithubId()) // githubId 반환
-                        .githubImage(post.getAuthor().getGithubImage())
-                        .build())
+                .map(post -> {
+                    // 댓글 목록 가져오기
+                    List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+
+                    // postSelected 계산
+                    boolean postSelected = comments.stream().anyMatch(Comment::getSelected);
+
+                    return PostListInfo.builder()
+                            .postId(post.getId())
+                            .postTitle(post.getPostTitle())
+                            .githubId(post.getAuthor().getGithubId())
+                            .githubImage(post.getAuthor().getGithubImage())
+                            .likedMemberCount(post.getLikedMembers().size())
+                            .postSelected(postSelected)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return ApiResponseGenerator.success(postInfos, HttpStatus.OK);
     }
+
 
     @GetMapping("/alltechstacks/list")
     public ApiResponse<ApiResponse.SuccessBody<TechStacksInfo>> getAllTechStacks() {

@@ -11,4 +11,6 @@ public class PostListInfo {
     private String postTitle;
     private String githubId;
     private String githubImage;
+    private int likedMemberCount;
+    private boolean postSelected; // 추가된 필드
 }
