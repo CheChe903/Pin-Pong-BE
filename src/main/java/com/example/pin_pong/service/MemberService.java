@@ -66,7 +66,7 @@ public class MemberService {
     private String extractUserIdFromProfile(String githubProfile) {
         try {
             JsonNode jsonNode = objectMapper.readTree(githubProfile);
-            return String.valueOf(jsonNode.path("owner").path("id").asLong());
+            return String.valueOf(jsonNode.path("owner").path("id").asText());
         } catch (Exception e) {
             log.error("Failed to extract userId from profile", e);
             return null;
@@ -131,7 +131,7 @@ public class MemberService {
 
     public void increasePin(Long memberId) {
         Member member = findById(memberId);
-        Integer pin_inc = 3;
+        int pin_inc = 3;
         member.setPin(member.getPin() + pin_inc);
         memberRepository.save(member);
         log.debug("Increased pin for member with id: {}", memberId);

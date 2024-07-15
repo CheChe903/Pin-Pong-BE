@@ -11,7 +11,6 @@ import java.util.Set;
 public class PostWriteRequest {
     private String postTitle;
     private String githubRepoUrl;
-    private Map<Long, String> commitList;
     private String content;
     private Set<String> techStacks;
 

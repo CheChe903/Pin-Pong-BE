@@ -5,7 +5,7 @@ import com.example.pin_pong.domain.dto.request.UpdateTechStacksRequest;
 import com.example.pin_pong.domain.dto.response.MemberGithubIdInfo;
 import com.example.pin_pong.domain.dto.response.MemberGithubImageInfo;
 import com.example.pin_pong.domain.dto.response.MemberPinInfo;
-import com.example.pin_pong.domain.dto.response.MemberTechStacksInfo;
+import com.example.pin_pong.domain.dto.response.TechStacksInfo;
 import com.example.pin_pong.service.MemberService;
 import com.example.pin_pong.support.ApiResponse;
 import com.example.pin_pong.support.ApiResponseGenerator;
@@ -62,10 +62,10 @@ public class MemberController {
     }
 
     @GetMapping("/techstacks/{githubId}")
-    public ApiResponse<ApiResponse.SuccessBody<MemberTechStacksInfo>> getTechStacks(@PathVariable("githubId") String githubId) {
+    public ApiResponse<ApiResponse.SuccessBody<TechStacksInfo>> getTechStacks(@PathVariable("githubId") String githubId) {
         Member member = memberService.findByGithubId(githubId);
 
-        MemberTechStacksInfo res = MemberTechStacksInfo.builder()
+        TechStacksInfo res = TechStacksInfo.builder()
                 .techStacks(member.getTechStacks())
                 .build();
 
@@ -73,11 +73,11 @@ public class MemberController {
     }
 
     @PatchMapping("/techstacks/update")
-    public ApiResponse<ApiResponse.SuccessBody<MemberTechStacksInfo>> updateTechStacks(@RequestBody UpdateTechStacksRequest updateRequest, HttpServletRequest request) {
+    public ApiResponse<ApiResponse.SuccessBody<TechStacksInfo>> updateTechStacks(@RequestBody UpdateTechStacksRequest updateRequest, HttpServletRequest request) {
         Long memberId = memberService.findMemberByToken(request);
         Member updatedMember = memberService.updateTechStacks(memberId, updateRequest.getTechStacks());
 
-        MemberTechStacksInfo res = MemberTechStacksInfo.builder()
+        TechStacksInfo res = TechStacksInfo.builder()
                 .techStacks(updatedMember.getTechStacks())
                 .build();
         return ApiResponseGenerator.success(res, HttpStatus.OK);

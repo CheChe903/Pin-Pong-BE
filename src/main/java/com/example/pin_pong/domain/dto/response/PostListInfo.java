@@ -9,5 +9,6 @@ import lombok.Getter;
 public class PostListInfo {
     private Long postId;
     private String postTitle;
-    private Long memberId;
+    private String githubId;
+    private String githubImage;
 }

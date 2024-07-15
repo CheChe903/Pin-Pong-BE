@@ -161,7 +161,8 @@ public class PostController {
                 .map(post -> PostListInfo.builder()
                         .postId(post.getId())
                         .postTitle(post.getPostTitle())
-                        .memberId(post.getAuthor().getId()) // memberId만 반환
+                        .githubId(post.getAuthor().getGithubId()) // githubId 반환
+                        .githubImage(post.getAuthor().getGithubImage())
                         .build())
                 .collect(Collectors.toList());
 
@@ -176,10 +177,22 @@ public class PostController {
                 .map(post -> PostListInfo.builder()
                         .postId(post.getId())
                         .postTitle(post.getPostTitle())
-                        .memberId(post.getAuthor().getId()) // memberId만 반환
+                        .githubId(post.getAuthor().getGithubId()) // githubId 반환
+                        .githubImage(post.getAuthor().getGithubImage())
                         .build())
                 .collect(Collectors.toList());
 
         return ApiResponseGenerator.success(postInfos, HttpStatus.OK);
+    }
+
+    @GetMapping("/alltechstacks/list")
+    public ApiResponse<ApiResponse.SuccessBody<TechStacksInfo>> getAllTechStacks() {
+        List<TechStack> techStacks = techStackService.findAllTechStacks();
+
+        TechStacksInfo res = TechStacksInfo.builder()
+                .techStacks(new HashSet<>(techStacks)) // Convert List to Set
+                .build();
+
+        return ApiResponseGenerator.success(res, HttpStatus.OK);
     }
 }

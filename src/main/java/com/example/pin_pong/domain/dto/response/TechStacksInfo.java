@@ -12,6 +12,6 @@ import java.util.Set;
 @NoArgsConstructor
 @Data
 @Builder
-public class MemberTechStacksInfo {
+public class TechStacksInfo {
     private Set<TechStack> techStacks;
 }

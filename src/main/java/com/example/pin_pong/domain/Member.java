@@ -22,7 +22,7 @@ public class Member {
     private String githubImage;
 
     @Column(name="pin")
-    private Integer pin;
+    private int pin;
 
     @ManyToMany
     @JoinTable(

@@ -1,6 +1,7 @@
 package com.example.pin_pong.controller;
 
 import com.example.pin_pong.domain.Member;
+import com.example.pin_pong.domain.dto.response.TokenResponseInfo;
 import com.example.pin_pong.domain.dto.response.URLGithubInfo;
 import com.example.pin_pong.service.GithubService;
 import com.example.pin_pong.service.MemberService;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.servlet.http.HttpSession;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -66,11 +68,11 @@ public class AuthController {
 
     @GetMapping("/oauth/github/callback")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> handleGithubCallback(@RequestParam("code") String code, HttpSession session, RedirectAttributes redirectAttributes) {
+    public ResponseEntity<TokenResponseInfo> handleGithubCallback(@RequestParam("code") String code, HttpSession session, RedirectAttributes redirectAttributes) {
         String accessToken = githubService.getAccessToken(code);
-        Map<String, Object> userInfo = githubService. getUserInfo(accessToken);
+        Map<String, Object> userInfo = githubService.getUserInfo(accessToken);
 
-        log.debug(userInfo.toString());
+        log.debug("USERINFO : {}", userInfo.toString());
 
         // GitHub 사용자의 avatar_url과 id 정보 추출
         String githubImage = (String) userInfo.get("avatar_url");
@@ -79,12 +81,17 @@ public class AuthController {
         // GitHub 사용자의 프로필 JSON 생성
         String githubProfile = String.format("{\"owner\": {\"avatar_url\": \"%s\", \"id\": \"%s\"}}", githubImage, githubId);
 
+
         Member member = memberService.saveOrUpdateUser(githubProfile);
         String jwtToken = tokenService.createToken(member.getId());
 
-        // 응답에 토큰을 포함하여 반환
-        return ResponseEntity.ok().body(Collections.singletonMap("token", jwtToken));
+        // 응답 DTO 생성
+        TokenResponseInfo response = new TokenResponseInfo(jwtToken, accessToken, githubId);
+
+
+        return ResponseEntity.ok().body(response);
     }
+
 
     @GetMapping("/generate-token")
     public ResponseEntity<Map<String, String>> generateToken(@RequestParam("id") Long id) {

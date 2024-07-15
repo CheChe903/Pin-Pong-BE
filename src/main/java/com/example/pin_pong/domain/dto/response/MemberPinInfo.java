@@ -10,5 +10,5 @@ import lombok.*;
 @Data
 @Builder
 public class MemberPinInfo {
-    private Integer pin;
+    private int pin;
 }
