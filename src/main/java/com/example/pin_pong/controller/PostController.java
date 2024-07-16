@@ -211,6 +211,7 @@ public class PostController {
                             .githubImage(post.getAuthor().getGithubImage())
                             .likedMemberCount(post.getLikedMembers().size())
                             .postSelected(postSelected)
+                            .techStacks(post.getTechStacks())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -237,6 +238,7 @@ public class PostController {
                             .githubImage(post.getAuthor().getGithubImage())
                             .likedMemberCount(post.getLikedMembers().size())
                             .postSelected(postSelected)
+                            .techStacks(post.getTechStacks())
                             .build();
                 })
                 .collect(Collectors.toList());
