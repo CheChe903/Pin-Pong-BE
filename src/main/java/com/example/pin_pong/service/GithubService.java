@@ -2,6 +2,7 @@ package com.example.pin_pong.service;
 
 import com.example.pin_pong.domain.dto.response.GithubCommit;
 import com.example.pin_pong.domain.dto.response.GithubCommitDetail;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -9,13 +10,16 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
+@Slf4j
 public class GithubService {
 
     @Value("${github.client.id}")
@@ -62,12 +66,15 @@ public class GithubService {
 
     public Map<String, String> getCommitsAndPatches(String githubRepoUrl, String accessToken) {
         String apiUrl = convertToApiUrl(githubRepoUrl);
+        log.debug("github apiUrl: " + apiUrl);
+
         String commitsUrl = apiUrl + "/commits";
 
         Map<String, String> commitMap = new HashMap<>();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + accessToken);
+        headers.set("Authorization", "token " + accessToken);
+        headers.set("Accept", "application/vnd.github.v3+json");
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
@@ -79,31 +86,50 @@ public class GithubService {
         );
 
         List<GithubCommit> commits = response.getBody();
+        log.debug("commits: {}", commits != null ? commits.toString() : "null");
+
+        String apiCommitUrl = removePullRequestNumber(apiUrl);
+        log.debug("apiCommitUrl: " + apiCommitUrl);
 
         if (commits != null) {
             for (GithubCommit commit : commits) {
                 String commitId = commit.getSha();
-                String patchUrl = apiUrl + "/commits/" + commitId;
+                String patchUrl = apiCommitUrl + "/commits/" + commitId;
 
-                ResponseEntity<GithubCommitDetail> commitDetailResponse = restTemplate.exchange(
-                        patchUrl,
-                        HttpMethod.GET,
-                        entity,
-                        GithubCommitDetail.class
-                );
+                try {
+                    ResponseEntity<GithubCommitDetail> commitDetailResponse = restTemplate.exchange(
+                            patchUrl,
+                            HttpMethod.GET,
+                            entity,
+                            GithubCommitDetail.class
+                    );
 
-                GithubCommitDetail commitDetail = commitDetailResponse.getBody();
-                String patch = commitDetail != null ? commitDetail.getPatch() : "";
+                    GithubCommitDetail commitDetail = commitDetailResponse.getBody();
 
-                commitMap.put(commitId, patch);
+                    if (commitDetail != null) {
+                        String combinedPatch = commitDetail.getPatch();
+                        commitMap.put(commitId, combinedPatch);
+                    }
+                } catch (HttpClientErrorException.NotFound e) {
+                    log.warn("Commit details not found for commitId: {}", commitId);
+                    log.debug("HttpClientErrorException details:", e);
+                }
             }
         }
 
         return commitMap;
     }
 
+
     private String convertToApiUrl(String githubRepoUrl) {
         return githubRepoUrl.replace("https://github.com/", "https://api.github.com/repos/")
                 .replace("/pull/", "/pulls/");
+    }
+
+    private String removePullRequestNumber(String url) {
+        // Find the index of '/pulls/'
+        int index = url.indexOf("/pulls/");
+        log.debug("url index : {}", index);
+        return url.substring(0, index);
     }
 }
