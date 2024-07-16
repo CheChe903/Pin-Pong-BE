@@ -73,7 +73,7 @@ public class GithubService {
         Map<String, String> commitMap = new HashMap<>();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "token " + accessToken); // Authorization 헤더 수정
+        headers.set("Authorization", "token " + accessToken);
         headers.set("Accept", "application/vnd.github.v3+json");
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -105,15 +105,14 @@ public class GithubService {
                     );
 
                     GithubCommitDetail commitDetail = commitDetailResponse.getBody();
-                    String patch = commitDetail != null ? commitDetail.getPatch() : "";
 
-                    commitMap.put(commitId, patch);
+                    if (commitDetail != null) {
+                        String combinedPatch = commitDetail.getPatch();
+                        commitMap.put(commitId, combinedPatch);
+                    }
                 } catch (HttpClientErrorException.NotFound e) {
-                    // Handle 404 Not Found error
                     log.warn("Commit details not found for commitId: {}", commitId);
-                    // Optionally, you can log the exception details for further investigation
                     log.debug("HttpClientErrorException details:", e);
-                    // You can choose to skip adding this commit to commitMap or handle it differently
                 }
             }
         }

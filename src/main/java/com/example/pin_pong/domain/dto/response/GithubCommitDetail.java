@@ -4,23 +4,25 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GithubCommitDetail {
-    private String patch;
-
     @JsonProperty("files")
     private List<FileDetail> files;
 
     public String getPatch() {
         if (files != null && !files.isEmpty()) {
-            return files.get(0).getPatch();  // assuming we want the patch of the first file
+            return files.stream()
+                    .map(FileDetail::getPatch)
+                    .filter(patch -> patch != null && !patch.isEmpty())
+                    .collect(Collectors.joining("\n\n"));
         }
         return null;
     }
 
-    public void setPatch(String patch) {
-        this.patch = patch;
+    public void setFiles(List<FileDetail> files) {
+        this.files = files;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
