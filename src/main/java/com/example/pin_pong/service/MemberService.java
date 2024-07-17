@@ -2,6 +2,7 @@ package com.example.pin_pong.service;
 
 import com.example.pin_pong.domain.Member;
 import com.example.pin_pong.domain.TechStack;
+import com.example.pin_pong.domain.dto.response.MemberRankingInfo;
 import com.example.pin_pong.repository.MemberRepository;
 import com.example.pin_pong.repository.TechStackRepository;
 import com.example.pin_pong.security.JwtTokenProvider;
@@ -13,9 +14,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,13 +42,15 @@ public class MemberService {
         // 기술 스택은 임시로 빈 Set으로 설정
         Set<TechStack> techStacks = new HashSet<>();
 
-        // 핀은 기본값으로 설정 (예: 0)
-        Integer pin = 0;
+        // 핀은 기본값으로 설정 (예: 20)
+        Integer pin = 5;
 
         log.debug("githubId: {}", githubId);
         log.debug("githubImage: {}", githubImage);
 
         Member member = memberRepository.findByGithubId(githubId).orElse(null);
+
+        LocalDateTime now = LocalDateTime.now();
 
         if (member == null) {
             log.debug("Member not found. Creating new member.");
@@ -52,12 +59,21 @@ public class MemberService {
                     .githubImage(githubImage)
                     .techStacks(techStacks)
                     .pin(pin)
+                    .lastLogin(now)
                     .build();
             member = memberRepository.save(member);
             log.debug("Saved new member with id: {}", member.getId());
         } else {
             log.debug("Member found with id: {}", member.getId());
+
+            if (member.getLastLogin() == null || !member.getLastLogin().toLocalDate().isEqual(LocalDate.now())) {
+                log.debug("Last login was not today. Logging the event.");
+                // 추가 로직을 여기에 추가할 수 있습니다.
+                increaseDailyPin(member.getId());
+            }
             // 이미 존재하는 멤버의 경우 업데이트 로직을 추가할 수 있음
+            member.setLastLogin(now);
+            member = memberRepository.save(member);
         }
 
         return member;
@@ -131,10 +147,39 @@ public class MemberService {
 
     public void increasePin(Long memberId) {
         Member member = findById(memberId);
-        int pin_inc = 3;
+        int pin_inc = 10;
         member.setPin(member.getPin() + pin_inc);
         memberRepository.save(member);
         log.debug("Increased pin for member with id: {}", memberId);
     }
 
+    public void increaseDailyPin(Long memberId) {
+        Member member = findById(memberId);
+        int pin_inc = 1;
+        member.setPin(member.getPin() + pin_inc);
+        memberRepository.save(member);
+        log.debug("Increased daily pin for member with id: {}", memberId);
+    }
+
+    public Set<String> getMemberTechStackNames(Long memberId) {
+        Member member = findById(memberId);
+        return member.getTechStacks().stream()
+                .map(TechStack::getTechName)
+                .collect(Collectors.toSet());
+    }
+
+    public List<MemberRankingInfo> getMemberRanking() {
+        return memberRepository.findAll().stream()
+                .sorted((m1, m2) -> Integer.compare(m2.getPin(), m1.getPin()))
+                .map(member -> MemberRankingInfo.builder()
+                        .githubId(member.getGithubId())
+                        .githubImage(member.getGithubImage())
+                        .pin(member.getPin())
+                        .techStacks(member.getTechStacks().stream()
+                                .map(techStack -> techStack.getTechName())
+                                .sorted()
+                                .collect(Collectors.toList()))
+                        .build())
+                .collect(Collectors.toList());
+    }
 }

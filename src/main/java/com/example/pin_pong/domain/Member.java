@@ -3,6 +3,7 @@ package com.example.pin_pong.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,6 +25,9 @@ public class Member {
     @Column(name="pin")
     private int pin;
 
+    @Column(name="lastLogin")
+    private LocalDateTime lastLogin;
+
     @ManyToMany
     @JoinTable(
             name = "member_tech_stacks",
@@ -34,10 +38,11 @@ public class Member {
 
 
     @Builder
-    public Member(String githubId, String githubImage, Set<TechStack> techStacks, Integer pin) {
+    public Member(String githubId, String githubImage, Set<TechStack> techStacks, Integer pin, LocalDateTime lastLogin) {
         this.githubId = githubId;
         this.githubImage = githubImage;
         this.techStacks = techStacks;
         this.pin = pin;
+        this.lastLogin = lastLogin;
     }
 }
