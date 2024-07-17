@@ -2,10 +2,7 @@ package com.example.pin_pong.controller;
 
 import com.example.pin_pong.domain.Member;
 import com.example.pin_pong.domain.dto.request.UpdateTechStacksRequest;
-import com.example.pin_pong.domain.dto.response.MemberGithubIdInfo;
-import com.example.pin_pong.domain.dto.response.MemberGithubImageInfo;
-import com.example.pin_pong.domain.dto.response.MemberPinInfo;
-import com.example.pin_pong.domain.dto.response.TechStacksInfo;
+import com.example.pin_pong.domain.dto.response.*;
 import com.example.pin_pong.service.MemberService;
 import com.example.pin_pong.support.ApiResponse;
 import com.example.pin_pong.support.ApiResponseGenerator;
@@ -15,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/api/v1/member")
@@ -65,8 +65,13 @@ public class MemberController {
     public ApiResponse<ApiResponse.SuccessBody<TechStacksInfo>> getTechStacks(@PathVariable("githubId") String githubId) {
         Member member = memberService.findByGithubId(githubId);
 
+        List<String> sortedTechStacks = member.getTechStacks().stream()
+                .map(techStack -> techStack.getTechName())
+                .sorted()
+                .collect(Collectors.toList());
+
         TechStacksInfo res = TechStacksInfo.builder()
-                .techStacks(member.getTechStacks())
+                .techStacks(sortedTechStacks)
                 .build();
 
         return ApiResponseGenerator.success(res, HttpStatus.OK);
@@ -77,9 +82,20 @@ public class MemberController {
         Long memberId = memberService.findMemberByToken(request);
         Member updatedMember = memberService.updateTechStacks(memberId, updateRequest.getTechStacks());
 
+        List<String> sortedTechStacks = updatedMember.getTechStacks().stream()
+                .map(techStack -> techStack.getTechName())
+                .sorted()
+                .collect(Collectors.toList());
+
         TechStacksInfo res = TechStacksInfo.builder()
-                .techStacks(updatedMember.getTechStacks())
+                .techStacks(sortedTechStacks)
                 .build();
         return ApiResponseGenerator.success(res, HttpStatus.OK);
+    }
+
+    @GetMapping("/ranking")
+    public ApiResponse<ApiResponse.SuccessBody<List<MemberRankingInfo>>> getMemberRanking() {
+        List<MemberRankingInfo> ranking = memberService.getMemberRanking();
+        return ApiResponseGenerator.success(ranking, HttpStatus.OK);
     }
 }

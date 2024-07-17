@@ -251,10 +251,73 @@ public class PostController {
     public ApiResponse<ApiResponse.SuccessBody<TechStacksInfo>> getAllTechStacks() {
         List<TechStack> techStacks = techStackService.findAllTechStacks();
 
+        List<String> sortedTechStacks = techStacks.stream()
+                .map(TechStack::getTechName)
+                .sorted()
+                .collect(Collectors.toList());
+
         TechStacksInfo res = TechStacksInfo.builder()
-                .techStacks(new HashSet<>(techStacks)) // Convert List to Set
+                .techStacks(sortedTechStacks)
                 .build();
 
         return ApiResponseGenerator.success(res, HttpStatus.OK);
     }
+
+    @GetMapping("/list/withmytag")
+    public ApiResponse<ApiResponse.SuccessBody<List<PostListInfo>>> getPostsByMemberTags(HttpServletRequest request) {
+        Long memberId = memberService.findMemberByToken(request);
+        Set<String> memberTechStackNames = memberService.getMemberTechStackNames(memberId);
+
+        List<Post> posts = postService.findAllPosts();
+
+        List<PostListInfo> postInfos = posts.stream()
+                .filter(post -> post.getTechStacks().stream()
+                        .map(TechStack::getTechName)
+                        .anyMatch(memberTechStackNames::contains))
+                .map(post -> {
+                    List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+                    boolean postSelected = comments.stream().anyMatch(Comment::getSelected);
+
+                    return PostListInfo.builder()
+                            .postId(post.getId())
+                            .postTitle(post.getPostTitle())
+                            .githubId(post.getAuthor().getGithubId())
+                            .githubImage(post.getAuthor().getGithubImage())
+                            .likedMemberCount(post.getLikedMembers().size())
+                            .postSelected(postSelected)
+                            .techStacks(post.getTechStacks())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return ApiResponseGenerator.success(postInfos, HttpStatus.OK);
+    }
+
+    @GetMapping("/list/{techName}/withtag")
+    public ApiResponse<ApiResponse.SuccessBody<List<PostListInfo>>> getPostsByTechName(@PathVariable("techName") String techName) {
+        List<Post> posts = postService.findAllPosts();
+
+        List<PostListInfo> postInfos = posts.stream()
+                .filter(post -> post.getTechStacks().stream()
+                        .map(TechStack::getTechName)
+                        .anyMatch(tn -> tn.equalsIgnoreCase(techName)))
+                .map(post -> {
+                    List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+                    boolean postSelected = comments.stream().anyMatch(Comment::getSelected);
+
+                    return PostListInfo.builder()
+                            .postId(post.getId())
+                            .postTitle(post.getPostTitle())
+                            .githubId(post.getAuthor().getGithubId())
+                            .githubImage(post.getAuthor().getGithubImage())
+                            .likedMemberCount(post.getLikedMembers().size())
+                            .postSelected(postSelected)
+                            .techStacks(post.getTechStacks())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return ApiResponseGenerator.success(postInfos, HttpStatus.OK);
+    }
+
 }

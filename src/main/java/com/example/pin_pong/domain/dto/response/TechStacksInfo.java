@@ -4,6 +4,7 @@ package com.example.pin_pong.domain.dto.response;
 import com.example.pin_pong.domain.TechStack;
 import lombok.*;
 
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -13,5 +14,5 @@ import java.util.Set;
 @Data
 @Builder
 public class TechStacksInfo {
-    private Set<TechStack> techStacks;
+    private List<String> techStacks;
 }
