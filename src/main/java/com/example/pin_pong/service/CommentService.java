@@ -44,7 +44,7 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("Comment not found with id: " + commentId));
 
-        if (!comment.getPost().getAuthor().equals(member)) {
+        if (!comment.getMember().equals(member)) {
             throw new IllegalArgumentException("You do not have permission to select this comment.");
         }
 
@@ -55,6 +55,12 @@ public class CommentService {
         } else {
             throw new IllegalArgumentException("Comment is already selected.");
         }
+    }
+
+    public Member findMemberByCommentId(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found with id: " + commentId));
+        return comment.getMember();
     }
 
     // Add other methods as needed for more complex business logic

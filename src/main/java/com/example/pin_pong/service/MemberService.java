@@ -62,6 +62,7 @@ public class MemberService {
                     .lastLogin(now)
                     .build();
             member = memberRepository.save(member);
+            increaseDailyPin(member.getId());
             log.debug("Saved new member with id: {}", member.getId());
         } else {
             log.debug("Member found with id: {}", member.getId());
@@ -72,9 +73,9 @@ public class MemberService {
                 increaseDailyPin(member.getId());
             }
             // 이미 존재하는 멤버의 경우 업데이트 로직을 추가할 수 있음
-            member.setLastLogin(now);
-            member = memberRepository.save(member);
         }
+        member.setLastLogin(now);
+        member = memberRepository.save(member);
 
         return member;
     }

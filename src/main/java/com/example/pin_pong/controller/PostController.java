@@ -98,6 +98,7 @@ public class PostController {
                         .selected(comment.getSelected())
                         .content(comment.getContent())
                         .githubId(comment.getMember().getGithubId()) // 수정된 부분
+                        .githubImage(comment.getMember().getGithubImage()) // 추가된 부분
                         .build())
                 .toList();
 
@@ -169,6 +170,7 @@ public class PostController {
                         .selected(comment.getSelected())
                         .content(comment.getContent())
                         .githubId(comment.getMember().getGithubId()) // 수정된 부분
+                        .githubImage(comment.getMember().getGithubImage()) // 추가된 부분
                         .build())
                 .collect(Collectors.toList());
 
@@ -176,17 +178,15 @@ public class PostController {
     }
 
     @PatchMapping("/{postId}/{commentId}/select")
-    public ApiResponse<?> selectComment(@PathVariable("postId") Long postid, @PathVariable("commentId") Long commentid, HttpServletRequest request) {
-        Long memberId = memberService.findMemberByToken(request);
-        Member member = memberService.findById(memberId);
+    public ApiResponse<?> selectComment(@PathVariable("postId") Long postId, @PathVariable("commentId") Long commentId) {
+        Member commentAuthor = commentService.findMemberByCommentId(commentId);
 
-        Comment selectedComment = commentService.selectComment(commentid, member);
-
-        if (selectedComment != null) {
+        try {
+            Comment selectedComment = commentService.selectComment(commentId, commentAuthor);
             return ApiResponseGenerator.success(selectedComment, HttpStatus.OK);
-        } else {
+        } catch (IllegalArgumentException e) {
             ErrorResponse errorResponse = ErrorResponse.builder()
-                    .message("Failed to select comment with id: " + commentid)
+                    .message(e.getMessage())
                     .build();
             return ApiResponseGenerator.success(errorResponse, HttpStatus.BAD_REQUEST);
         }

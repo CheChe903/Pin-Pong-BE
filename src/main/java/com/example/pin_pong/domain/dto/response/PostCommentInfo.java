@@ -13,5 +13,7 @@ public class PostCommentInfo {
     private Boolean selected;
     private String content;
     private Long postId;
-    private String githubId; // Optional: If you want to include member information
+    private String githubId;
+    private String githubImage;
+    // Optional: If you want to include member information
 }
